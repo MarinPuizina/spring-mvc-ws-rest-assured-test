@@ -2,6 +2,9 @@ package restassured;
 
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestCreateUser {
 
@@ -38,13 +41,21 @@ public class TestCreateUser {
         shippingAddress.put("postalCode", "123456");
         shippingAddress.put("type", "shipping");
 
+        Map<String, Object> billingAddress = new HashMap<>();
+        billingAddress.put("city", "Vancouver");
+        billingAddress.put("country", "Canada");
+        billingAddress.put("streetName", "123 Street name");
+        billingAddress.put("postalCode", "123456");
+        billingAddress.put("type", "billing");
+
         userAddresses.add(shippingAddress);
+        userAddresses.add(billingAddress);
 
         // Mimic the request body for createUser
         Map<String, Object> userDetails = new HashMap<>();
         userDetails.put("firstName", "Marin");
         userDetails.put("lastName", "Puizina");
-        userDetails.put("email", "test6@test.com");
+        userDetails.put("email", "test8@test.com");
         userDetails.put("password", "123");
         userDetails.put("addresses", userAddresses);
 
@@ -63,6 +74,23 @@ public class TestCreateUser {
 
         String userId = response.jsonPath().getString("userId"); // we expect to get the userId element as part of json response
         assertNotNull(userId);
+
+        String responseBody = response.getBody().asString();
+        try {
+
+            JSONObject responseBodyJson = new JSONObject(responseBody);
+            JSONArray addresses = responseBodyJson.getJSONArray("addresses");
+
+            assertNotNull(addresses);
+            assertTrue(addresses.length() == 2);
+
+            String addressId = addresses.getJSONObject(0).getString("addressId");
+            assertNotNull(addressId);
+            assertTrue(addressId.length() == 30);
+
+        } catch (JSONException e) {
+            fail(e.getMessage());
+        }
 
     }
 
